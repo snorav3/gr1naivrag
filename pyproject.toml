@@ -1,0 +1,23 @@
+[project]
+name = "gr1naivrag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Nora Viktoria Sterbinszky", email = "Nora-Viktoria.Sterbinszky@telekom.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "langchain>=1.4.4",
+    "langchain-community>=0.4.2",
+    "langchain-ollama>=1.1.0",
+    "langchain-qdrant>=1.1.0",
+]
+
+[project.scripts]
+gr1naivrag = "gr1naivrag:main"
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"

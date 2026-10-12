@@ -1,6 +1,6 @@
 # GraphRAG 1. – Naiv RAG 1. házi feladat
 
-## Korpusz (forrásdokumentumok)
+## Korpusz (forrásdokumentumok):
 
 - <https://hu.wikipedia.org/wiki/Volvo>
 - <https://en.wikipedia.org/wiki/Volvo_Trucks>
@@ -61,7 +61,7 @@
 - <https://en.wikipedia.org/wiki/KG_Mobility>
 - <https://en.wikipedia.org/wiki/Buick>
 
-## Kérdések
+## Kérdések:
 
 1. Csoportosítsd faszerkezetben, hogy melyik járműgyártó cég melyik anyavállalat alá tartozik!
 2. Hány független autómárka van, tehát akinek jelenleg nem egy másik márka a tulajdonosa?
