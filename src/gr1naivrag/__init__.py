@@ -5,18 +5,23 @@ from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains import create_retrieval_chain
+#from langchain.chains.retrieval import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
+from fastapi import FastAPI
+from pydantic import BaseModel
+import uvicorn
 import re
 
 
 QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "wikipedia_rag"
 EMBEDDING_MODEL = "granite-embedding:278m"
-LLM_MODEL = "llama3.2"
+LLM_MODEL = "qwen2.5:0.5b"
 #OLLAMA_URL = "http://localhost:11434"
-COLL_FILE_PATH = "README.md"
+SOURCES_FILE_PATH = "README.md"
+QUESTIONS_FILE_PATH = "questions.md"
 
 
 class LocalRagSystem:
@@ -89,11 +94,26 @@ class LocalRagSystem:
         question_answer_chain = create_stuff_documents_chain(self.llm, prompt)
         rag_chain = create_retrieval_chain(retriever, question_answer_chain)
         
-        answer = rag_chain.invoke({"input": question})
+        response = rag_chain.invoke({"input": question})
         
-        print("\n=== LOKÁLIS AI VÁLASZ ===")
-        print(answer["answer"])
-        print("=========================\n")
+        print("\n============================ LOKÁLIS AI VÁLASZ =============================")
+        print(response["answer"])
+
+        # Források
+        print("================================ FORRÁSOK ==================================")
+        for i, doc in enumerate(response["context"], 1):
+            src_loc = doc.metadata.get("source", "Ismeretlen forrás")
+            page_num = doc.metadata.get("page", "-")
+            print(f"[{i}] {src_loc} (Oldal: {page_num})")
+            #print(f"    Idézet: {doc.page_content[:100]}...")
+        
+        print("----------------------------------------------------------------------------\n")
+
+        return response["answer"]
+
+
+class ChatRequest(BaseModel):
+    question: str
 
 def collect_wikipedia_links(file_path: str) -> list[str]:
     """Wikipédia URL-ek kigyűjtése az md-fájlból."""
@@ -140,7 +160,7 @@ def collect_questions(file_path: str) -> list[str]:
                 if quest:
                     quests.append(quest)
                     
-    print(f"Talált kérdések száma: {len(quests)}")
+    print(f"[Fájlkezelő] Talált kérdések száma: {len(quests)}")
 
     return quests
 
@@ -149,16 +169,33 @@ def main():
     rag = LocalRagSystem()
     
     # Wikipédia források (Magyar Wikipédia oldalak)
-    wiki_urls = collect_wikipedia_links(COLL_FILE_PATH)
+    #wiki_urls = collect_wikipedia_links(SOURCES_FILE_PATH)
     
     # 1. Adatok betöltése
-    rag.ingest_wikipedia_links(wiki_urls)
+    #rag.ingest_wikipedia_links(wiki_urls)
 
-    # 2. Kérdések kigyűjtése a fájlból
-    questions = collect_questions(COLL_FILE_PATH)
+    # 2/a. Kérdések kigyűjtése a fájlból
+    questions = collect_questions(QUESTIONS_FILE_PATH)
     for ord, q in enumerate(questions, 1):
-        print(f"\n\n=================== {ord}. KÉRDÉS ===================")
+        print(f"\n\n================================ {ord}. KÉRDÉS ================================")
         rag.ask_question(q)
+
+    # 2/b. Kérdés CLI-ből
+    #while True:
+    #    question = input("Írd be a kérdésed (kilépés: x): ")
+    #    if question == "x":
+    #        break
+    #    rag.ask_question(question)
+
+    # 2/c. FastAPI /api/chat endpointtal
+    #app = FastAPI()
+    #
+    #@app.post("/api/chat")
+    #def chat(request: ChatRequest):
+    #    answer = rag.ask_question(request.question)
+    #    return {"answer": answer}
+    #
+    #uvicorn.run(app, host="127.0.0.1", port=8000)
 
 if __name__ == "__main__":
     main()
